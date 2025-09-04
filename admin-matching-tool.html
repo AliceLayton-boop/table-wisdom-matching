@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Table Wisdom - Admin Matching Tool</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+        h1 {
+            color: #E64615;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #00B1A8;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 1.2em;
+        }
+        .section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        .section h2 {
+            color: #5C697A;
+            margin-top: 0;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        button {
+            background: #E64615;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #d63910;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .secondary-button {
+            background: #00B1A8;
+        }
+        .secondary-button:hover {
+            background: #009990;
+        }
+        .user-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 12px;
+        }
+        .user-table th, .user-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+            vertical-align: top;
+        }
+        .user-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+            color: #5C697A;
+            font-size: 11px;
+        }
+        .user-table tr:hover {
+            background: #f5f5f5;
+            cursor: pointer;
+        }
+        .selected-user {
+            background: #e3f2fd !important;
+        }
+        .recently-updated {
+            background: #fff3e0 !important;
+            border-left: 4px solid #FF9800;
+        }
+        .recently-updated.selected-user {
+            background: #e1f5fe !important;
+            border-left: 4px solid #FF9800;
+        }
+        .comparison {
+            background: #f0f8ff;
+            border: 2px solid #E64615;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .overlap-score {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            background: linear-gradient(135deg, #E64615 0%, #00B1A8 100%);
+            color: white;
+            border-radius: 8px;
+        }
+        .assessment-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .assessment-item {
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .overlap { background: #d4edda; border-left: 4px solid #28a745; }
+        .partial { background: #fff3cd; border-left: 4px solid #ffc107; }
+        .no-overlap { background: #f8d7da; border-left: 4px solid #dc3545; }
+        .missing { background: #e2e3e5; border-left: 4px solid #6c757d; }
+        
+        .export-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #E64615;
+        }
+        .assessment-data {
+            max-width: 120px;
+            word-wrap: break-word;
+            font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Table Wisdom - Admin Matching Tool</h1>
+        <p class="subtitle">Ferramenta de Compatibilidade para Mentores e Alunos</p>
+        
+        <!-- Email Input Section -->
+        <div class="section">
+            <h2>Add User Data / Adicionar Dados do Usuário</h2>
+            <p>Paste the complete email content from a user's assessment submission:</p>
+            <p><em>Cole o conteúdo completo do email da submissão de avaliação do usuário:</em></p>
+            <textarea id="emailInput" placeholder="Paste email content here... / Cole o conteúdo do email aqui..."></textarea>
+            <br>
+            <button onclick="parseEmail()">Add User / Adicionar Usuário</button>
+            <button onclick="clearInput()" class="secondary-button">Clear Input / Limpar</button>
+            <button onclick="clearAllData()" style="background: #dc3545;">Clear All Data / Limpar Todos os Dados</button>
+        </div>
+
+        <!-- User Database Section -->
+        <div class="section">
+            <h2>User Database / Banco de Dados de Usuários</h2>
+            <div class="stats" id="statsContainer">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalUsers">0</div>
+                    <div>Total Users / Total de Usuários</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="completeUsers">0</div>
+                    <div>Complete Profiles / Perfis Completos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="avgCompletion">0%</div>
+                    <div>Avg Completion / Conclusão Média</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="recentlyUpdated">0</div>
+                    <div>Recently Updated / Atualizados</div>
+                </div>
+            </div>
+            
+            <div style="margin: 20px 0; padding: 15px; background: #fff3e0; border-radius: 5px; border-left: 4px solid #FF9800;">
+                <p style="margin: 0; font-size: 14px;"><strong>Recently Updated Users:</strong> Orange highlighted rows indicate users who have resubmitted their assessments. Consider rematching these users.</p>
+                <p style="margin: 5px 0 0 0; font-size: 14px;"><strong>Usuários Atualizados:</strong> Linhas destacadas em laranja indicam usuários que reenviaram suas avaliações.</p>
+                <button onclick="clearAllUpdateFlags()" style="margin-top: 10px; padding: 8px 15px; font-size: 14px;">Clear All Update Flags / Limpar Flags</button>
+            </div>
+            
+            <p>Click on users to select them for comparison / Clique nos usuários para selecioná-los para comparação:</p>
+            <div style="overflow-x: auto;">
+                <table class="user-table" id="userTable">
+                    <thead>
+                        <tr>
+                            <th>Email</th>
+                            <th>Date / Data</th>
+                            <th>Last Updated / Última Atualização</th>
+                            <th>Values / Valores</th>
+                            <th>Interests / Interesses</th>
+                            <th>Personality / Personalidade</th>
+                            <th>Complete / Completo</th>
+                            <th>Actions / Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userTableBody">
+                        <!-- Users will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Comparison Section -->
+        <div class="section" id="comparisonSection" style="display: none;">
+            <h2>User Comparison / Comparação de Usuários</h2>
+            <div id="comparisonContent">
+                <!-- Comparison results will appear here -->
+            </div>
+        </div>
+
+        <!-- Export Section -->
+        <div class="section export-section">
+            <h2>Export Data / Exportar Dados</h2>
+            <p>Export your user data for Google Sheets, further analysis, or matching records:</p>
+            <p><em>Exporte os dados dos usuários para Google Sheets, análise adicional, ou registros de compatibilidade:</em></p>
+            <button onclick="exportToCSV()">Download CSV</button>
+            <button onclick="exportToJSON()" class="secondary-button">Download JSON</button>
+            <button onclick="showGoogleSheetsFormat()" class="secondary-button">Google Sheets Format</button>
+            <div id="exportPreview" style="margin-top: 20px;"></div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize users array and load from localStorage
+        let users = [];
+        let selectedUsers = [];
+
+        // Load saved data when page starts
+        function initializeAdminTool() {
+            console.log('Initializing Table Wisdom admin tool...');
+            const savedUsers = localStorage.getItem('tableWisdomUsers');
+            if (savedUsers) {
+                users = JSON.parse(savedUsers);
+                console.log('Loaded', users.length, 'saved users');
+                
+                // Migrate existing user data to include new tracking fields
+                let needsMigration = false;
+                users.forEach(user => {
+                    if (user.recentlyUpdated === undefined) {
+                        user.recentlyUpdated = false;
+                        needsMigration = true;
+                    }
+                    if (!user.lastUpdated) {
+                        user.lastUpdated = user.completionDate ? 
+                            new Date(user.completionDate).toISOString() : 
+                            new Date().toISOString();
+                        needsMigration = true;
+                    }
+                });
+                
+                if (needsMigration) {
+                    console.log('Migrated existing users to include tracking fields');
+                    saveUsersToStorage();
+                }
+                
+                updateUserTable();
+                updateStats();
+            }
+        }
+
+        // Save users to localStorage
+        function saveUsersToStorage() {
+            localStorage.setItem('tableWisdomUsers', JSON.stringify(users));
+            console.log('Saved', users.length, 'Table Wisdom users to localStorage');
+        }
+
+        function parseEmail() {
+            console.log('parseEmail function called for Table Wisdom');
+            
+            const emailInputElement = document.getElementById('emailInput');
+            if (!emailInputElement) {
+                console.error('emailInput element not found');
+                alert('Error: Cannot find email input field. Please refresh the page.');
+                return;
+            }
+            
+            const emailContent = emailInputElement.value.trim();
+            if (!emailContent) {
+                alert('Please paste an email first! / Por favor, cole um email primeiro!');
+                return;
+            }
+
+            console.log('Processing Table Wisdom email content...');
+
+            try {
+                const userData = extractUserData(emailContent);
+                console.log('Extracted Table Wisdom user data:', userData);
+                
+                if (userData && userData.email) {
+                    // Check if user already exists
+                    const existingIndex = users.findIndex(user => user.email === userData.email);
+                    if (existingIndex !== -1) {
+                        // Mark as recently updated for admin attention
+                        userData.recentlyUpdated = true;
+                        userData.lastUpdated = new Date().toISOString();
+                        users[existingIndex] = userData;
+                        alert('User updated successfully! (Highlighted for rematching consideration)\n\nUsuário atualizado com sucesso! (Destacado para consideração de nova compatibilidade)');
+                    } else {
+                        userData.recentlyUpdated = false;
+                        userData.lastUpdated = new Date().toISOString();
+                        users.push(userData);
+                        alert('User added successfully! / Usuário adicionado com sucesso!');
+                    }
+                    
+                    // Save to localStorage
+                    saveUsersToStorage();
+                    
+                    updateUserTable();
+                    updateStats();
+                    
+                    // Clear input
+                    emailInputElement.value = '';
+                    
+                } else {
+                    alert('Could not parse email. Please check the format.\n\nNão foi possível processar o email. Verifique o formato.');
+                    console.error('Failed to extract user data:', userData);
+                }
+            } catch (error) {
+                console.error('Parse error:', error);
+                alert('Error parsing email: ' + error.message + '\n\nErro ao processar email: ' + error.message);
+            }
+        }
+
+        function extractUserData(emailContent) {
+            console.log('Starting Table Wisdom extraction...');
+            
+            // Extract email address - look for various patterns
+            let emailMatch = emailContent.match(/\(([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\)/);
+            
+            if (!emailMatch) {
+                emailMatch = emailContent.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+            }
+            
+            const email = emailMatch ? emailMatch[1] : null;
+            console.log('Extracted email:', email);
+            
+            if (!email) {
+                throw new Error('No email address found in the content');
+            }
+
+            // Extract completion date
+            const dateMatch = emailContent.match(/Completed:\s*([0-9\/]+)|Concluído:\s*([0-9\/]+)/);
+            const completionDate = dateMatch ? (dateMatch[1] || dateMatch[2]) : new Date().toLocaleDateString();
+            console.log('Extracted date:', completionDate);
+
+            // Extract Table Wisdom assessments - only 3 required
+            const data = {
+                email: email,
+                completionDate: completionDate,
+                values: extractAssessment(emailContent, 'VALUES ASSESSMENT', 'AVALIAÇÃO DE VALORES'),
+                interests: extractAssessment(emailContent, 'INTEREST ASSESSMENT', 'AVALIAÇÃO DE INTERESSES'),
+                personality: extractAssessment(emailContent, 'PERSONALITY ASSESSMENT', 'AVALIAÇÃO DE PERSONALIDADE')
+            };
+
+            console.log('Final extracted Table Wisdom data:', data);
+            return data;
+        }
+
+        function extractAssessment(content, englishName, portugueseName) {
+            try {
+                // Try both English and Portuguese patterns
+                const patterns = [
+                    new RegExp(englishName + ':\\s*([^\n\r]+)', 'i'),
+                    new RegExp(englishName + '\\s+([^\n\r]+)', 'i'),
+                    new RegExp(portugueseName + ':\\s*([^\n\r]+)', 'i'),
+                    new RegExp(portugueseName + '\\s+([^\n\r]+)', 'i')
+                ];
+                
+                let match = null;
+                for (const pattern of patterns) {
+                    match = content.match(pattern);
+                    if (match) break;
+                }
+                
+                const result = match ? match[1].trim() : null;
+                console.log(`${englishName}/${portugueseName}:`, result);
+                return result;
+            } catch (error) {
+                console.error(`Error extracting ${englishName}:`, error);
+                return null;
+            }
+        }
+
+        function updateUserTable() {
+            const tbody = document.getElementById('userTableBody');
+            tbody.innerHTML = '';
+
+            users.forEach((user, index) => {
+                const row = document.createElement('tr');
+                row.onclick = () => selectUser(index);
+                
+                // Table Wisdom: 3 required assessments
+                const requiredCount = [user.values, user.interests, user.personality].filter(x => x && x.trim() !== '' && x !== 'Not completed / Não completado').length;
+                const isComplete = requiredCount === 3;
+                
+                // Format last updated time
+                const lastUpdated = user.lastUpdated ? 
+                    new Date(user.lastUpdated).toLocaleString() : 
+                    'Unknown';
+                
+                row.innerHTML = `
+                    <td class="assessment-data">${user.email}</td>
+                    <td>${user.completionDate}</td>
+                    <td style="font-size: 11px;">${lastUpdated}</td>
+                    <td class="assessment-data">${user.values || 'Missing'}</td>
+                    <td class="assessment-data">${user.interests || 'Missing'}</td>
+                    <td class="assessment-data">${user.personality || 'Missing'}</td>
+                    <td>${isComplete ? 'Complete / Completo' : `${requiredCount}/3`}${user.recentlyUpdated ? ' 🔄' : ''}</td>
+                    <td><button onclick="event.stopPropagation(); removeUser(${index})" style="padding: 5px 8px; font-size: 12px;">Remove</button></td>
+                `;
+                
+                // Apply visual highlighting
+                if (selectedUsers.includes(index)) {
+                    row.classList.add('selected-user');
+                }
+                if (user.recentlyUpdated) {
+                    row.classList.add('recently-updated');
+                }
+                
+                tbody.appendChild(row);
+            });
+        }
+
+        function selectUser(index) {
+            if (selectedUsers.includes(index)) {
+                selectedUsers = selectedUsers.filter(i => i !== index);
+            } else {
+                selectedUsers.push(index);
+            }
+
+            if (selectedUsers.length > 2) {
+                selectedUsers = selectedUsers.slice(-2);
+            }
+
+            updateUserTable();
+            
+            if (selectedUsers.length === 2) {
+                showComparison();
+            } else {
+                document.getElementById('comparisonSection').style.display = 'none';
+            }
+        }
+
+        function removeUser(index) {
+            users.splice(index, 1);
+            selectedUsers = selectedUsers.filter(i => i !== index).map(i => i > index ? i - 1 : i);
+            saveUsersToStorage();
+            updateUserTable();
+            updateStats();
+            if (selectedUsers.length < 2) {
+                document.getElementById('comparisonSection').style.display = 'none';
+            }
+        }
+
+        function showComparison() {
+            const user1 = users[selectedUsers[0]];
+            const user2 = users[selectedUsers[1]];
+            
+            const comparison = calculateTableWisdomCompatibility(user1, user2);
+            
+            document.getElementById('comparisonSection').style.display = 'block';
+            document.getElementById('comparisonContent').innerHTML = `
+                <div class="comparison">
+                    <h3>Comparing ${user1.email} vs ${user2.email}</h3>
+                    <h4><em>Comparando ${user1.email} vs ${user2.email}</em></h4>
+                    <div class="overlap-score">
+                        Mentor/Mentee Compatibility: ${comparison.overallCompatibility}%
+                        <br>Compatibilidade Mentor/Aluno: ${comparison.overallCompatibility}%
+                        <br><small style="font-size: 14px;">${comparison.note}</small>
+                    </div>
+                    
+                    <h4>Assessment Breakdown / Detalhamento das Avaliações:</h4>
+                    ${generateTableWisdomComparisonHTML(comparison)}
+                    
+                    <div style="margin-top: 20px;">
+                        <h4>Calculation Details / Detalhes do Cálculo:</h4>
+                        <p>Assessments included in calculation / Avaliações incluídas no cálculo: ${comparison.includedAssessments.join(', ')}</p>
+                        <p>Assessments excluded (0% or missing) / Avaliações excluídas (0% ou faltando): ${comparison.excludedAssessments.join(', ')}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function calculateTableWisdomCompatibility(user1, user2) {
+            const assessmentFields = ['values', 'interests', 'personality'];
+            
+            let meaningfulOverlapCount = 0;
+            let totalMeaningfulScore = 0;
+            const detailBreakdown = {};
+            const includedAssessments = [];
+            const excludedAssessments = [];
+            
+            assessmentFields.forEach(field => {
+                const val1 = user1[field];
+                const val2 = user2[field];
+                
+                // Check if BOTH users actually completed this assessment
+                const hasValidData1 = val1 && val1.trim() !== '' && val1 !== 'Missing' && val1 !== 'Not completed / Não completado' && val1 !== '-';
+                const hasValidData2 = val2 && val2.trim() !== '' && val2 !== 'Missing' && val2 !== 'Not completed / Não completado' && val2 !== '-';
+                
+                if (hasValidData1 && hasValidData2) {
+                    const compatibility = calculateFieldCompatibility(val1, val2, field);
+                    
+                    // Only include assessments where there IS overlap (>0%)
+                    if (compatibility > 0) {
+                        meaningfulOverlapCount++;
+                        totalMeaningfulScore += compatibility;
+                        includedAssessments.push(field);
+                        detailBreakdown[field] = {
+                            user1: val1,
+                            user2: val2,
+                            compatibility: compatibility,
+                            status: 'overlap'
+                        };
+                    } else {
+                        // Both completed but 0% overlap - exclude from average but show
+                        excludedAssessments.push(field + ' (0% overlap)');
+                        detailBreakdown[field] = {
+                            user1: val1,
+                            user2: val2,
+                            compatibility: compatibility,
+                            status: 'no-overlap'
+                        };
+                    }
+                } else {
+                    // Missing data from one or both users - exclude entirely
+                    excludedAssessments.push(field + ' (incomplete)');
+                    detailBreakdown[field] = {
+                        user1: val1 || 'Not completed',
+                        user2: val2 || 'Not completed',
+                        compatibility: null,
+                        status: 'missing'
+                    };
+                }
+            });
+            
+            // Calculate final compatibility based ONLY on assessments with meaningful overlap
+            const overallCompatibility = meaningfulOverlapCount > 0 
+                ? Math.round(totalMeaningfulScore / meaningfulOverlapCount)
+                : 0;
+            
+            return {
+                overallCompatibility: overallCompatibility,
+                meaningfulOverlaps: meaningfulOverlapCount,
+                totalAssessments: assessmentFields.length,
+                breakdown: detailBreakdown,
+                includedAssessments: includedAssessments,
+                excludedAssessments: excludedAssessments,
+                note: meaningfulOverlapCount > 0 
+                    ? `Based on ${meaningfulOverlapCount} assessments with overlap`
+                    : 'No meaningful overlap found / Nenhuma sobreposição significativa encontrada'
+            };
+        }
+
+        function calculateFieldCompatibility(val1, val2, field) {
+            if (field === 'personality') {
+                if (val1 === val2) return 100;
+                // For MBTI types, compare each letter
+                if (val1.length >= 4 && val2.length >= 4) {
+                    const shared = val1.split('').filter((char, i) => char === val2.charAt(i)).length;
+                    return Math.round((shared / 4) * 100);
+                }
+                return 0;
+            }
+            
+            // For values and interests - word/phrase matching
+            const words1 = val1.toLowerCase().split(/[,\s]+/).filter(w => w.length > 2);
+            const words2 = val2.toLowerCase().split(/[,\s]+/).filter(w => w.length > 2);
+            
+            const commonWords = words1.filter(word => 
+                words2.some(w2 => w2.includes(word) || word.includes(w2))
+            );
+            
+            const totalWords = Math.max(words1.length, words2.length);
+            return totalWords > 0 ? Math.round((commonWords.length / totalWords) * 100) : 0;
+        }
+
+        function generateTableWisdomComparisonHTML(comparison) {
+            return Object.entries(comparison.breakdown).map(([field, detail]) => `
+                <div class="assessment-comparison">
+                    <div class="assessment-item">
+                        <strong>${field.charAt(0).toUpperCase() + field.slice(1)}</strong>
+                    </div>
+                    <div class="assessment-item ${detail.status}">
+                        <strong>User 1:</strong> ${detail.user1}
+                    </div>
+                    <div class="assessment-item ${detail.status}">
+                        <strong>User 2:</strong> ${detail.user2}
+                        ${detail.compatibility !== null ? `<br><strong>Match: ${detail.compatibility}%</strong>` : ''}
+                        ${detail.status === 'no-overlap' ? '<br><em>Excluded from average (0% overlap)</em>' : ''}
+                        ${detail.status === 'missing' ? '<br><em>Excluded from average (incomplete data)</em>' : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateStats() {
+            const total = users.length;
+            // Table Wisdom: 3 required assessments
+            const complete = users.filter(user => 
+                [user.values, user.interests, user.personality].filter(x => x && x.trim() !== '' && x !== 'Not completed / Não completado').length === 3
+            ).length;
+            
+            const recentlyUpdatedCount = users.filter(user => user.recentlyUpdated).length;
+            
+            const totalAssessments = users.reduce((sum, user) => {
+                return sum + [user.values, user.interests, user.personality].filter(x => x && x.trim() !== '' && x !== 'Not completed / Não completado').length;
+            }, 0);
+            
+            // Updated calculation for 3 required assessments
+            const avgCompletion = total > 0 ? Math.round((totalAssessments / (total * 3)) * 100) : 0;
+
+            document.getElementById('totalUsers').textContent = total;
+            document.getElementById('completeUsers').textContent = complete;
+            document.getElementById('avgCompletion').textContent = avgCompletion + '%';
+            document.getElementById('recentlyUpdated').textContent = recentlyUpdatedCount;
+        }
+
+        function clearAllUpdateFlags() {
+            const updatedCount = users.filter(user => user.recentlyUpdated).length;
+            
+            if (updatedCount === 0) {
+                alert('No recently updated users to clear.\n\nNenhum usuário recentemente atualizado para limpar.');
+                return;
+            }
+            
+            if (confirm(`Clear update flags for ${updatedCount} users? This indicates you have reviewed/rematched them.\n\nLimpar flags de atualização para ${updatedCount} usuários? Isso indica que você os revisou/recompatibilizou.`)) {
+                users.forEach(user => {
+                    user.recentlyUpdated = false;
+                });
+                saveUsersToStorage();
+                updateUserTable();
+                updateStats();
+                alert(`Cleared update flags for ${updatedCount} users.\n\nFlags de atualização limpos para ${updatedCount} usuários.`);
+            }
+        }
+
+        function clearInput() {
+            document.getElementById('emailInput').value = '';
+        }
+
+        function clearAllData() {
+            if (confirm('Are you sure you want to delete ALL saved user data? This cannot be undone.\n\nTem certeza de que deseja excluir TODOS os dados salvos dos usuários? Isso não pode ser desfeito.')) {
+                localStorage.removeItem('tableWisdomUsers');
+                users = [];
+                selectedUsers = [];
+                updateUserTable();
+                updateStats();
+                document.getElementById('comparisonSection').style.display = 'none';
+                alert('All data cleared successfully!\n\nTodos os dados foram limpos com sucesso!');
+            }
+        }
+
+        function exportToCSV() {
+            if (users.length === 0) {
+                alert('No users to export!\n\nNenhum usuário para exportar!');
+                return;
+            }
+
+            const headers = ['Email', 'Completion Date', 'Values', 'Interests', 'Personality'];
+            const rows = users.map(user => [
+                user.email,
+                user.completionDate,
+                user.values || '',
+                user.interests || '',
+                user.personality || ''
+            ]);
+
+            const csvContent = [headers, ...rows].map(row => 
+                row.map(cell => `"${cell}"`).join(',')
+            ).join('\n');
+
+            downloadFile('table-wisdom-users.csv', csvContent, 'text/csv');
+        }
+
+        function exportToJSON() {
+            if (users.length === 0) {
+                alert('No users to export!\n\nNenhum usuário para exportar!');
+                return;
+            }
+            const jsonContent = JSON.stringify(users, null, 2);
+            downloadFile('table-wisdom-users.json', jsonContent, 'application/json');
+        }
+
+        function downloadFile(filename, content, contentType) {
+            const blob = new Blob([content], { type: contentType });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        function showGoogleSheetsFormat() {
+            if (users.length === 0) {
+                alert('No users to export!\n\nNenhum usuário para exportar!');
+                return;
+            }
+
+            const headers = ['Email', 'Completion Date', 'Values', 'Interests', 'Personality'];
+            const preview = document.getElementById('exportPreview');
+            
+            let html = '<h3>Copy this data to Google Sheets / Copie estes dados para o Google Sheets:</h3>';
+            html += '<textarea style="width: 100%; height: 300px; font-family: monospace;">';
+            html += headers.join('\t') + '\n';
+            
+            users.forEach(user => {
+                const row = [
+                    user.email,
+                    user.completionDate,
+                    user.values || '',
+                    user.interests || '',
+                    user.personality || ''
+                ];
+                html += row.join('\t') + '\n';
+            });
+            
+            html += '</textarea>';
+            html += '<p><strong>Instructions:</strong> Select all text above, copy (Ctrl+C), then paste into your Google Sheet starting at cell A1.</p>';
+            html += '<p><strong>Instruções:</strong> Selecione todo o texto acima, copie (Ctrl+C), depois cole em sua planilha do Google começando na célula A1.</p>';
+            
+            preview.innerHTML = html;
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', initializeAdminTool);
+    </script>
+</body>
+</html>
